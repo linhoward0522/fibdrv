@@ -73,6 +73,40 @@ static long long fib_fast_doubling_sequence(long long k)
 
     return a;
 }
+
+static long long fib_fast_doubling_clz_sequence(long long k)
+{
+    /* FIXME: C99 variable-length array (VLA) is not allowed in Linux kernel. */
+    // The position of the highest bit of n.
+    // So we need to loop `h` times to get the answer.
+    // Example: n = (Dec)50 = (Bin)00110010, then h = 6.
+    //                               ^ 6th bit from right side
+    if (k < 2)
+        return k;
+
+    unsigned int h = 64 - __builtin_clzll(k);
+
+    long long a = 0, b = 1;
+
+    for (long long mask = 1 << (h - 1); mask; mask >>= 1) {
+        // Let j = h-i (looping from i = 1 to i = h), n_j = floor(n / 2^j) = n
+        // >> j (n_j = n when j = 0), k = floor(n_j / 2), then a = F(k), b =
+        // F(k+1) now.
+        long long c = a * (2 * b - a);  // F(2k) = F(k) * [ 2 * F(k+1) – F(k) ]
+        long long d = a * a + b * b;    // F(2k+1) = F(k)^2 + F(k+1)^2
+
+        if (mask & k) {  // n_j is odd: k = (n_j-1)/2 => n_j = 2k + 1
+            a = d;       //   F(n_j) = F(2k + 1)
+            b = c + d;   //   F(n_j + 1) = F(2k + 2) = F(2k) + F(2k + 1)
+        } else {         // n_j is even: k = n_j/2 => n_j = 2k
+            a = c;       //   F(n_j) = F(2k)
+            b = d;       //   F(n_j + 1) = F(2k + 1)
+        }
+    }
+
+    return a;
+}
+
 static int fib_open(struct inode *inode, struct file *file)
 {
     if (!mutex_trylock(&fib_mutex)) {
@@ -94,7 +128,7 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
-    return (ssize_t) fib_fast_doubling_sequence(*offset);
+    return (ssize_t) fib_fast_doubling_clz_sequence(*offset);
 }
 
 /* write operation is skipped */
