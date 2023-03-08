@@ -9,7 +9,7 @@ PWD := $(shell pwd)
 
 GIT_HOOKS := .git/hooks/applied
 
-all: $(GIT_HOOKS) client
+all: $(GIT_HOOKS) client client_test
 	$(MAKE) -C $(KDIR) M=$(PWD) modules
 
 $(GIT_HOOKS):
@@ -18,7 +18,8 @@ $(GIT_HOOKS):
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
-	$(RM) client out
+	$(RM) client out client_test test
+
 load:
 	sudo insmod $(TARGET_MODULE).ko
 unload:
@@ -27,6 +28,9 @@ unload:
 client: client.c
 	$(CC) -o $@ $^
 
+client_test: client_test.c
+	$(CC) -o $@ $^
+ 
 PRINTF = env printf
 PASS_COLOR = \e[32;01m
 NO_COLOR = \e[0m
@@ -39,3 +43,10 @@ check: all
 	$(MAKE) unload
 	@diff -u out scripts/expected.txt && $(call pass)
 	@scripts/verify.py
+
+test: all
+	$(MAKE) unload
+	$(MAKE) load
+	sudo taskset -c 7 ./client_test > test
+	$(MAKE) unload
+	gnuplot scripts/test.gp

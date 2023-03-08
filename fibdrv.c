@@ -154,6 +154,7 @@ static ssize_t fib_write(struct file *file,
         kt = ktime_get();
         fib_fast_doubling_clz_sequence(*offset);
         kt = ktime_sub(ktime_get(), kt);
+        break;
     default:
         return 0;
     }
