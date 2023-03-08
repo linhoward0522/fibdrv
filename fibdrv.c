@@ -139,9 +139,24 @@ static ssize_t fib_write(struct file *file,
                          loff_t *offset)
 {
     ktime_t kt;
-    kt = ktime_get();
-    fib_sequence(*offset);
-    kt = ktime_sub(ktime_get(), kt);
+    switch (size) {
+    case 0:
+        kt = ktime_get();
+        fib_sequence(*offset);
+        kt = ktime_sub(ktime_get(), kt);
+        break;
+    case 1:
+        kt = ktime_get();
+        fib_fast_doubling_sequence(*offset);
+        kt = ktime_sub(ktime_get(), kt);
+        break;
+    case 2:
+        kt = ktime_get();
+        fib_fast_doubling_clz_sequence(*offset);
+        kt = ktime_sub(ktime_get(), kt);
+    default:
+        return 0;
+    }
     return (ssize_t) ktime_to_ns(kt);
 }
 
