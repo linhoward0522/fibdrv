@@ -47,6 +47,9 @@ check: all
 test: all
 	$(MAKE) unload
 	$(MAKE) load
-	sudo taskset -c 7 ./client_test > test
-	$(MAKE) unload
+	sudo taskset -c 7 ./client_test 4 > test
 	gnuplot scripts/test.gp
+	sudo taskset -c 7 ./client_test 1 > test_time
+	gnuplot scripts/test_time.gp
+	$(MAKE) unload
+	
